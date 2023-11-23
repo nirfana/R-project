@@ -10,7 +10,7 @@ The rest of the files for each project, such as .R scripts and .Rmd files, will 
 
 # Table of Content
 **Jump directly into the project folder :**
-1. will be updated soon
+1. [bike-share analysis](https://github.com/nirfana/R-project/tree/main/1.%20bike-share)
 2. will be updated soon
 
 # :+1: Let's Connect
