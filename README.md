@@ -11,7 +11,7 @@ The rest of the files for each project, such as .R scripts and .Rmd files, will 
 # Table of Content
 **Jump directly into the project folder :**
 1. [bike-share analysis](https://github.com/nirfana/R-project/tree/main/1.%20bike-share)
-2. will be updated soon
+2. [UNHCR Refugees Data](https://github.com/nirfana/R-project/tree/main/2.%20UNHCR%20Refugees%20Data)
 
 # :+1: Let's Connect
 To learn more about me or maybe chat about my work, please feel free to reach out at [Mail](mailto:devi.nirfana@outlook.com), [Medium](https://medium.com/@devinirfana), [LinkedIn](https://www.linkedin.com/in/devinirfana/) & [instagram](https://www.instagram.com/nate.ipynb/).
