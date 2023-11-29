@@ -1,0 +1,394 @@
+---
+title: 'Seeking Solace in ASEAN: A Closer Look at UNHCR Refugee Data'
+author: "Devi Nirfana H"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+The global refugee crisis is a complex and multifaceted issue, with millions of people displaced from their homes due to conflict, persecution, and natural disasters.
+
+The Southeast Asian region, encompassing the Association of Southeast Asian Nations (ASEAN), is not immune to the global refugee crisis. Millions of individuals have been forced to flee their homes due to conflict, persecution, and natural disasters, seeking sanctuary in neighboring ASEAN countries. Understanding the dynamics of refugee flows and the challenges faced by these displaced populations is crucial for developing effective humanitarian responses and fostering regional stability.
+
+This project will use a variety of data analysis techniques, including descriptive statistics, data visualization, and regression analysis. We will also use the R programming language to manipulate and analyze the data.
+
+The findings of this project will be of interest to policymakers, researchers, and the general public. Policymakers can use the findings to inform their decision-making on refugee policy. Researchers can use the findings to advance our understanding of the global refugee crisis. And the general public can use the findings to learn more about the plight of refugees.
+
+# Data Source
+
+UNHCR has created the `refugees` R package designed to facilitate access to the data within the [Refugee Data Finder](https://www.unhcr.org/refugee-statistics/). It provides an easy-to-use interface to the datasets, which cover forcibly displaced populations, including refugees, asylum-seekers and internally displaced people, stateless people, and others over a span of more than 70 years.
+
+This package provides data from three major sources:
+
+1.  Data from UNHCR's annual statistical activities dating back to 1951.
+
+2.  Data from the United Nations Relief and Works Agency for Palestine Refugees in the Near East (UNRWA), specifically for registered Palestine refugees under UNRWA's mandate.
+
+3.  Data from the Internal Displacement Monitoring Centre (IDMC) on people displaced within their country due to conflict or violence.
+
+The data within the `refugees` package is updated at the same time as the Refugee Data Finder, twice per year.
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# installing the `refugees` packages 
+install.packages("refugees",  repos = "http://cran.us.r-project.org")
+```
+
+```{r message=FALSE, warning=FALSE}
+# importing necesary packages
+library(tidyverse)
+library(scales)
+library(unhcrthemes)
+```
+
+```{r message=FALSE, warning=FALSE}
+# importing the data 
+library(refugees) 
+
+# importing the data only in south east asia and start in 2010
+population <- refugees::population %>% 
+  filter(coo_iso == c("BRN", "KHM", "IDN", "LAO", "MYS", "MMR", "PHL", "SGP", "THA", "VNM") & between(year, 2010, 2022))
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colnames(population)
+```
+
+The columns in the population dataset provide information on the number of refugees, asylum seekers, internally displaced persons (IDPs), and stateless people in countries around the world. Here's a description of each column:
+
+| **Column Name**   | **Description**                                                                                     |
+|:----------------------|:-----------------------------------------------|
+| year              | The year the data was collected                                                                     |
+| coo_name          | The name of the country of origin                                                                   |
+| coo               | The code of the country of origin (ISO 3166-1 alpha-3)                                              |
+| coo_iso           | The ISO 3166-1 alpha-2 code of the country of origin                                                |
+| coa_name          | The name of the country of asylum                                                                   |
+| coa               | The code of the country of asylum (ISO 3166-1 alpha-3)                                              |
+| coa_iso           | The ISO 3166-1 alpha-2 code of the country of asylum                                                |
+| refugees          | The number of refugees in the country of asylum                                                     |
+| asylum_seekers    | The number of asylum seekers in the country of asylum                                               |
+| returned_refugees | The number of refugees who have returned to their country of origin                                 |
+| idps              | The number of internally displaced persons (IDPs) in the country of origin                          |
+| returned_idps     | The number of IDPs who have returned to their place of origin                                       |
+| stateless         | The number of stateless persons in the country of asylum                                            |
+| ooc               | The number of other persons of concern (OOC) in the country of asylum                               |
+| oip               | The number of persons of concern in need of international protection (OIP) in the country of asylum |
+| hst               | The host country's designation of the refugee status (refugee or asylum seeker)                     |
+
+```{r message=FALSE, warning=FALSE}
+glimpse(population)
+```
+
+```{r message=FALSE, warning=FALSE}
+unique(population$coo_name)
+```
+
+```{r message=FALSE, warning=FALSE}
+# recode the name of Laos
+population$coo_name <- recode(population$coo_name,
+                            "Lao People's Dem. Rep." = "Laos",
+                            .default = population$coo_name)
+```
+
+# Annual Trends of Refugee Population
+
+```{r message=FALSE, warning=FALSE}
+# annual trends of refugee in south east asia
+population %>% 
+  group_by(year) %>% 
+  summarise(total_refugees = sum(c(refugees, oip), na.rm = TRUE)) %>% 
+  print(n=13)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+population %>%
+  mutate(year = as.character(year)) %>%
+  group_by(year) %>%
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE)) %>% 
+  mutate(year = factor(year, levels = unique(year))) %>%
+  ggplot(aes(x = refugees, y = year)) +
+  geom_col(fill = unhcr_pal(n = 1, "pal_blue"), width = 0.8) +
+  geom_text(aes(label = scales::label_comma()(refugees)),
+            hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Refugee and other people in need of international protection in ASEAN",
+       subtitle = "Annual trends in ASEAN (2010 - 2022)",
+       caption = "Source: UNHCR Refugee Data Finder") +
+  theme_unhcr(font_size = 14,
+              grid = FALSE,
+              axis = FALSE,
+              axis_title = FALSE,
+              axis_text = "y")
+```
+
+The annual trends of refugees in ASEAN countries exhibit significant fluctuations. The year with the highest number of refugees was 2017, with 934,776 refugees. In contrast, the year with the lowest number of refugees was 2018, with 715 refugees.
+
+The number of refugees in ASEAN countries has been on the rise in recent years. In 2022, there were 228,613 refugees in ASEAN countries, up from 10,184 in 2021. This increase is due to a number of factors, including the ongoing conflict in Myanmar and the political crisis in Cambodia.
+
+# Total refugee per country in ASEAN
+
+```{r message=FALSE, warning=FALSE}
+population %>% 
+  arrange(desc(refugees)) %>% 
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE),
+            .by = coo_name) 
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+population %>% 
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE), .by = coo_name) %>% 
+  slice_max(order_by = refugees, n = 10) %>% 
+  ggplot(aes(refugees, reorder(coo_name, refugees))) +
+  geom_col(fill = unhcr_pal(n = 1, "pal_blue"),
+           width = 0.8) +
+  geom_text(aes(label = scales::label_comma()(refugees)),
+            hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Refugee and other people in need of international protection in ASEAN",
+       subtitle = "By country of origin in ASEAN (2010 - 2022)",
+       caption = "Source: UNHCR Refugee Data Finder") +
+  theme_unhcr(font_size = 14,
+              grid = FALSE,
+              axis = FALSE,
+              axis_title = FALSE,
+              axis_text = "y")
+
+```
+
+The large number of refugees in Myanmar and Viet Nam highlights the ongoing conflicts and instability in these countries. The international community needs to continue to provide humanitarian assistance to refugees and work towards resolving the underlying conflicts.
+
+The relatively lower numbers of refugees in Indonesia, Cambodia, Malaysia, the Philippines, Laos, Thailand, and Singapore suggest that these countries have been more successful in addressing the causes of displacement. However, these countries still face challenges in integrating refugees into their societies.
+
+## 2017 vs 2020
+
+The data presented in the table shows that the number of refugees in ASEAN has fluctuated significantly over the years. The highest number of refugees was recorded in 2017, with 934,776 refugees. This was followed by a sharp decline in 2018, with only 715 refugees. The number of refugees then increased again in 2020, to 866,952.
+
+```{r message=FALSE, warning=FALSE}
+population %>%
+  filter(year %in% c("2017", "2020")) %>%
+  group_by(coo_name, year) %>%
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE)) %>%
+  pivot_wider(names_from = year, values_from = refugees, names_prefix = "year_")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+population %>%
+  filter(year %in% c("2017", "2020")) %>%
+  group_by(coo_name, year) %>%
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE)) %>% 
+  ggplot(aes(refugees, reorder(coo_name, refugees))) +
+  geom_col(fill = unhcr_pal(n = 1, "pal_blue"),
+           width = 0.8) +
+  facet_wrap(~year, scales = "free_y", ncol = 1) +
+  geom_text(aes(label = scales::label_comma()(refugees)),
+            hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Refugee and other people in need of international protection in ASEAN",
+       subtitle = "By country of origin in ASEAN 2017 vs 2020",
+       caption = "Source: UNHCR Refugee Data Finder") +
+  theme_unhcr(font_size = 12,
+              grid = FALSE,
+              axis = FALSE,
+              axis_title = FALSE,
+              axis_text = "y")
+```
+
+The countries that have contributed the most refugees to ASEAN vary depending on the year. However, Myanmar has consistently been one of the main sources of refugees in the region. In 2017, for example, Myanmar accounted for over 90% of all refugees in ASEAN. Other countries that have contributed a significant number of refugees to ASEAN include Viet Nam, Laos, and Cambodia.
+
+The reasons for the high number of refugees in ASEAN are complex and vary from country to country. However, some of the most common factors include conflict, persecution, and natural disasters.
+
+In Myanmar, for example, the ongoing conflict between the government and the Rohingya people has been a major driver of displacement. In Viet Nam, many people have fled their homes due to poverty and lack of opportunity. In Laos, conflict and natural disasters have been the main causes of displacement. And in Cambodia, the legacy of the Khmer Rouge genocide continues to drive displacement.
+
+The refugee crisis in ASEAN is a major humanitarian challenge. The countries in the region are struggling to cope with the large number of arrivals, and many refugees are living in difficult conditions. The international community needs to provide more support to ASEAN countries to help them address the refugee crisis.
+
+# Myanmar
+
+```{r message=FALSE, warning=FALSE}
+population %>% 
+  filter(coo_name == "Myanmar") %>% 
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE), .by = year)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+population %>% 
+  filter(coo_name == "Myanmar") %>% 
+  summarise(refugees = sum(c(refugees, oip), na.rm = TRUE), .by = year) %>% 
+  mutate(year = factor(year, levels = unique(year))) %>%
+  ggplot(aes(x = refugees, y = year)) +
+  geom_col(fill = unhcr_pal(n = 1, "pal_blue"), width = 0.8) +
+  geom_text(aes(label = scales::label_comma()(refugees)),
+            hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Refugee Populations from Myanmar",
+       subtitle = "Annual refugee trends from Myanmar (2010 - 2022)",
+       caption = "Source: UNHCR Refugee Data Finder") +
+  theme_unhcr(font_size = 14,
+              grid = FALSE,
+              axis = FALSE,
+              axis_title = FALSE,
+              axis_text = "y")
+```
+
+The number of refugees from Myanmar has fluctuated significantly over the years, with notable spikes in 2014, 2017, and 2020. These periods of high refugee numbers can be attributed to specific events and ongoing conflicts within the country.
+
+In 2014, the number of refugees from Myanmar surged to 329,995, primarily due to a surge in communal violence in Rakhine state, particularly targeting the Rohingya Muslim minority group. This period marked a turning point in the Rohingya crisis, escalating from localized incidents into a broader pattern of violence and displacement.
+
+The Rohingya people, a Muslim ethnic minority, have long faced discrimination and marginalization in Myanmar. Their status as an unrecognized minority group has left them vulnerable to persecution and violence. In Rakhine state, where the majority of Rohingya reside, tensions between the Rohingya and the Rakhine Buddhist majority have historically been high.
+
+The escalating violence in Rakhine state triggered a mass exodus of Rohingya people, who fled their homes in fear for their lives. Thousands of Rohingya sought refuge in neighboring Bangladesh, while others remained internally displaced within Myanmar, living in precarious conditions and facing ongoing threats of violence.
+
+The international community expressed concern over the violence in Rakhine state and called for an end to the bloodshed and protection for the Rohingya minority. The United Nations Secretary-General condemned the violence and called for an investigation. However, the Myanmar government's response was inadequate, and the violence continued.
+
+In August 2017, a series of coordinated attacks on police and military outposts in Rakhine state by the Arakan Rohingya Salvation Army (ARSA), an armed Rohingya group, triggered a brutal military crackdown by the Myanmar government. The military's response was characterized by widespread atrocities, including extrajudicial killings, mass rape, and the burning of Rohingya villages.
+
+The year 2017 witnessed a dramatic surge in the number of refugees fleeing Myanmar, reaching an unprecedented high of 933,658.
+
+In 2020, another notable increase in refugees occurred, reaching 866,518. This rise was mainly attributed to the ongoing conflict in Rakhine state and the continued displacement of Rohingya people. The military's offensive against the Arakan Army also contributed to the displacement.
+
+In 2022, the refugee crisis in Myanmar remained a pressing issue, with an estimated 228,613 refugees fleeing to neighboring countries. The ongoing conflict in Rakhine state and the military's offensive against the Arakan Army continued to drive displacement, as did the political instability following the 2021 military coup.
+
+## Where they go?
+
+```{r message=FALSE, warning=FALSE}
+unique(population$coa_name)
+```
+
+```{r message=FALSE, warning=FALSE}
+# recode the coa_name
+population$coa_name <- recode(population$coa_name,
+                              "United Kingdom of Great Britain and Northern Ireland" = "United Kindom",
+                               "United States of America" = "USA",
+                               "Netherlands (Kingdom of the)" = "Netherlands",
+                            .default = population$coa_name)
+```
+
+```{r message=FALSE, warning=FALSE}
+population %>%
+  filter(coo_name == "Myanmar") %>% 
+  summarize(refugees = sum(c(refugees, oip), na.rm = TRUE),
+            .by = coa_name) %>% 
+  arrange(-refugees) %>% 
+  print(n = 30)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+population %>%
+  filter(coo_name == "Myanmar") %>% 
+  summarize(refugees = sum(c(refugees, oip), na.rm = TRUE), .by = coa_name) %>%
+  slice_max(order_by = refugees, n = 10) %>%
+  ggplot(aes(refugees, reorder(coa_name, refugees))) +
+  geom_col(fill = unhcr_pal(n = 1, "pal_blue"),
+            width = 0.8) +
+  geom_text(aes(label = scales::label_comma()(refugees)),
+            hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Refugee Populations from Myanmar",
+       subtitle = "By country of asylum (2010 - 2022)",
+       caption = "Source: UNHCR Refugee Data Finder") +
+  theme_unhcr(font_size = 14,
+             grid = FALSE,
+             axis = FALSE,
+             axis_title = FALSE,
+             axis_text = "y")
+
+```
+
+In a desperate search for refuge from the escalating conflicts and persecution in Myanmar, refugees have sought solace in neighboring countries, primarily Bangladesh, Malaysia, Thailand, India, and Japan. These countries have become sanctuaries for displaced Myanmar individuals, each with unique factors attracting refugees to their borders.
+
+Bangladesh, sharing a direct border with Myanmar, offers a relatively accessible and secure haven for refugees. The proximity and shared linguistic ties with the Rohingya community in Bangladesh facilitate integration and provide a sense of familiarity for those fleeing their homeland.
+
+Malaysia and Thailand, also geographically close to Myanmar, attract refugees with their relatively strong economies and vibrant Myanmar communities. The prospect of employment opportunities and the support of established Myanmar diaspora networks prove to be compelling reasons for refugees to seek asylum in these countries.
+
+India, with its historical and cultural connections to Myanmar, extends a welcoming hand to refugees. The familiarity with Indian languages and the presence of existing Myanmar communities ease the transition for refugees seeking asylum in India.
+
+Japan, while geographically distant from Myanmar, emerges as a preferred destination due to its reputation for a generous refugee policy and its commitment to providing essential services to those seeking refuge. The prospect of a safe and secure environment with access to education, healthcare, and other essential services draws refugees to Japan.
+
+These five countries, each with their distinct characteristics and offerings, have become beacons of hope for Myanmar refugees. Driven by the need for safety, stability, and a chance to rebuild their lives, Myanmar individuals have found refuge in these neighboring nations, seeking solace and a chance to restart.
+
+## Asylum Seekers
+
+```{r message=FALSE, warning=FALSE}
+population %>%
+  filter(coo_name == "Myanmar") %>% 
+  summarize(asylum_seekers = sum(asylum_seekers, na.rm = TRUE),
+            .by = coa_name) %>% 
+  arrange(-asylum_seekers) %>% 
+  print(n = 30)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+population %>%
+  filter(coo_name == "Myanmar") %>% 
+  summarize(asylum_seekers = sum(asylum_seekers, na.rm = TRUE),
+            .by = coa_name) %>% 
+  slice_max(order_by = asylum_seekers, n = 10) %>% 
+  ggplot(aes(asylum_seekers, reorder(coa_name, asylum_seekers))) +
+  geom_col(fill = unhcr_pal(n = 1, "pal_blue"),
+            width = 0.8) +
+  geom_text(aes(label = scales::label_comma()(asylum_seekers)),
+            hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Refugee Populations from Myanmar",
+       subtitle = "Total asylum seekers country of asylum (2010 - 2022)",
+       caption = "Source: UNHCR Refugee Data Finder") +
+  theme_unhcr(font_size = 14,
+             grid = FALSE,
+             axis = FALSE,
+             axis_title = FALSE,
+             axis_text = "y")
+```
+
+\
+Refugees, individuals fleeing their home countries due to fear of persecution or violence, seek asylum in other countries to escape danger and rebuild their lives. They often face harrowing journeys, leaving behind everything they know and love in search of safety and a chance to start anew.
+
+For refugees, seeking asylum is a matter of survival. It is a means to escape the dire circumstances they face in their home countries and find a place where they can live in peace and security. Asylum provides refugees with the legal status and protection they need to rebuild their lives, access essential services, and eventually integrate into their new communities.
+
+If refugees do not seek asylum in the asylum country, they may face a number of challenges, including:
+
+-   **Detention:** Refugees who do not seek asylum may be detained by the authorities. This is often the case if the country has a strict policy of enforcing immigration laws. Refugees who are detained may be held in immigration detention centers, which can be overcrowded and unsanitary. They may also be subject to deportation proceedings.
+
+-   **Deportation:** Refugees who do not seek asylum may be deported. This is the most serious outcome for a refugee who does not seek asylum. Deportation means that the refugee will be forced to return to their country of origin, even if they face danger there. This can be a life-threatening situation for refugees who are fleeing persecution or violence.
+
+-   **Living without legal status:** Refugees who do not seek asylum may be able to stay in the country without legal status. This is often the case if the country has a policy of tolerance for undocumented immigrants. However, living without legal status can be difficult and precarious. Refugees may have difficulty finding work, accessing essential services, and traveling freely. They may also be at risk of deportation if they are caught by the authorities.
+
+Malaysia stands out as the top destination for asylum seekers from Myanmar, with over 141,291 individuals seeking refuge in the country. This can be attributed to several factors, including Malaysia's geographical proximity to Myanmar, its relatively strong economy, and the presence of a large Myanmar community within its borders. The familiarity with the language and culture, coupled with the potential for employment opportunities, makes Malaysia an appealing choice for many asylum seekers.
+
+India, with its historical and cultural connections to Myanmar, has also become a significant destination for asylum seekers. Over 6,736 individuals from Myanmar have sought refuge in India, drawn by the presence of established Myanmar communities and the possibility of accessing essential services. The shared linguistic ties and the familiarity with Indian culture further enhance the appeal of India as an asylum destination.
+
+Australia, with its reputation for a generous refugee policy and its commitment to providing support to asylum seekers, has attracted over 451 individuals from Myanmar. The prospect of a safe and secure environment, coupled with access to education, healthcare, and other essential services, has made Australia an attractive option for those seeking asylum.
+
+Germany, known for its welcoming approach towards refugees, has also received over 317 asylum seekers from Myanmar. The country's strong economy, its commitment to human rights, and its well-established refugee support systems have made it a desirable destination for many asylum seekers.
+
+The United States, with its long history of providing refuge to those fleeing persecution, has also welcomed over 242 asylum seekers from Myanmar. The country's strong economy, its diverse population, and its commitment to upholding human rights have made it an appealing destination for many seeking asylum.
+
+# Summary
+
+The refugee crisis in Myanmar is a complex and multifaceted issue with deep historical roots. The country's long-standing ethnic conflicts, coupled with recent political upheavals, have created a volatile environment that has forced hundreds of thousands of people to flee their homes and seek refuge in neighboring countries and beyond.
+
+The Rohingya refugee crisis, which has emerged as one of the most pressing humanitarian challenges of our time, highlights the devastating consequences of ethnic discrimination and violence. The Myanmar military's brutal crackdown against the Rohingya people has resulted in widespread human rights abuses, mass displacement, and the creation of a stateless population.
+
+The international community has a responsibility to address the root causes of the refugee crisis in Myanmar and to provide support to refugees who have been forced to flee their homes. This includes addressing the underlying factors that drive conflict, promoting human rights, and supporting efforts to create a more stable and inclusive society for all Myanmar citizens.
+
+In addition to addressing the root causes of the refugee crisis, the international community must also provide humanitarian assistance to refugees who are currently living in displacement. This includes providing access to basic necessities such as shelter, food, and healthcare, as well as supporting efforts to integrate refugees into their host communities.
+
+The refugee crisis in Myanmar is a stark reminder of the human cost of conflict and persecution. It is a call to action for the international community to work together to address the root causes of displacement and to provide support to refugees who are seeking a safe haven. Only through concerted efforts can we hope to alleviate the suffering of refugees and create a more just and equitable world.
+
+## Challenges for ASEAN countries
+
+-   **Lack of resources:** ASEAN countries are generally developing nations with limited resources to address the needs of large refugee populations.
+
+-   **Inadequate infrastructure:** The infrastructure in many ASEAN countries is not equipped to handle the influx of refugees, which can lead to overcrowding, poor sanitation, and a lack of access to essential services.
+
+-   **Integration challenges:** Integrating refugees into host communities can be difficult, as it requires addressing cultural and language barriers, as well as providing refugees with skills and education that are relevant to the host country's labor market.
+
+-   **Political sensitivities:** The refugee crisis in Myanmar can be a sensitive issue for ASEAN countries, as it can raise tensions between different ethnic groups and political factions.
+
+## **Recommendations for ASEAN countries:**
+
+-   **Increase funding for humanitarian assistance:** ASEAN countries should increase their funding for humanitarian assistance to refugees, ensuring that they have access to basic necessities such as shelter, food, and healthcare.
+
+-   **Strengthen border controls:** ASEAN countries should strengthen their border controls to prevent illegal trafficking and exploitation of refugees.
+
+-   **Support refugee integration:** ASEAN countries should support efforts to integrate refugees into their host communities, providing them with language training, skills development, and access to social services.
+
+-   **Facilitate dialogue and cooperation:** ASEAN countries should facilitate dialogue and cooperation between Myanmar and the international community to address the root causes of the refugee crisis.
+
+-   **Promote regional stability:** ASEAN countries should work to promote regional stability, which can help to reduce the risk of future refugee crises.
