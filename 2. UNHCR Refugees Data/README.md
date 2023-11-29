@@ -1,3 +1,6 @@
+You can read the analysis reports directly by downloadig the html file and open it in your browser.
+
+
 # Data Source
 UNHCR has created the refugees R package designed to facilitate access to the data within the Refugee Data Finder. It provides an easy-to-use interface to the datasets, which cover forcibly displaced populations, including refugees, asylum-seekers and internally displaced people, stateless people, and others over a span of more than 70 years.
 
